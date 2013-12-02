@@ -13,18 +13,24 @@ H1{
 }
 .small ul>li{
   color: #0011ff;
+  clear: both;
 }
 /*templates split with ','*/
 .small ul>li:not(:last-child):after{
   content: ',';
 }
-
+.inline{
+  float: left;
+  margin-top: 25px;
+}
+.inline:not(:last-child){
+  margin-right: 30px;
+}
 .content{
   height: 200px;
   overflow: auto;
 }
 .content table,.result table{
-  margin-top: 25px;
   background: #CCCCCC;
 }
 .content table td,.result table td{
@@ -36,4 +42,9 @@ H1{
 .tip{
   text-align: center;
   color: red;
+}
+#result {
+  height:300px;
+  width: 860px;
+  margin: 10px auto;
 }

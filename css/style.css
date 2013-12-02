@@ -1,0 +1,39 @@
+ul{
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: inline-block;
+}
+ul li{
+  display: inline-block;
+}
+H1{
+  font-size: 24px;
+  border-bottom: solid 1px #CCCCCC;
+}
+.small ul>li{
+  color: #0011ff;
+}
+/*templates split with ','*/
+.small ul>li:not(:last-child):after{
+  content: ',';
+}
+
+.content{
+  height: 200px;
+  overflow: auto;
+}
+.content table,.result table{
+  margin-top: 25px;
+  background: #CCCCCC;
+}
+.content table td,.result table td{
+  background: #ffffff;
+}
+.content ul li:not(:last-child){
+  border-right: solid 1px #CCCCCC;
+}
+.tip{
+  text-align: center;
+  color: red;
+}

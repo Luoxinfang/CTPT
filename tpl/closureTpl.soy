@@ -1,0 +1,27 @@
+/**
+ * Test
+ */
+{namespace CTPT}
+/**
+ * Test the performance
+ * @param rows The name of the person.
+ */
+{template .test}
+  {foreach $row in $rows}
+  <tr>
+    <td><input type="checkbox" name="row" value="{$row.id}"/></td>
+    <td data-name="{$row.name}">{$row.firstName+$row.lastName}</td>
+    <td data-used-name="{$row.usedName}">
+      <select name="usedName">
+        {foreach $item in $row.usedName}
+            <option value="{$item}">{$item}</option>
+        {/foreach}
+      </select>
+    </td>
+    <td>More info...</td>
+    <td>More info...</td>
+    <td>More info...</td>
+    <td class="edit"><a href="javascript:void(0);">Edit</a></td>
+  </tr>
+  {/foreach}
+{/template}

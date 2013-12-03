@@ -5,7 +5,7 @@
 %>
   <tr>
     <td><input type="checkbox" name="row" value="<%=row.id%>"/></td>
-    <td data-name="<%=row.name%>"><%=row.firstName+row.lastName%></td>
+    <td data-name="<%=row.name%>"><%=row.firstName+'.'+row.lastName%></td>
     <td data-used-name="<%=usedName%>">
       <select name="usedName">
         <%
@@ -16,10 +16,17 @@
         <%}%>
       </select>
     </td>
+    <td><%=row.teem%></td>
     <td>More info...</td>
     <td>More info...</td>
     <td>More info...</td>
-    <td class="edit"><a href="javascript:void(0);">Edit</a></td>
+    <td class="edit">
+      <%if(row.firstName == 'Lin'){%>
+      <a href="javascript:void(0);">Edit</a>
+      <%}else{%>
+      Edit
+      <%}%>
+    </td>
   </tr>
 <%
   }

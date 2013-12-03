@@ -12,12 +12,12 @@ define(function (require, exports, module) {
   var $con = $('.content tbody');
   var $res = $('.result tbody');
   var tplArray = [];
-  var dataNumArr = [10, 100, 1000,2000,3000, 10000/*, 10 * 10000, 20 * 1000*/];
+  var dataNumArr = [10, 100, 1000/*,2000,3000, 10000, 10 * 10000, 20 * 1000*/];
   var getData = require('page/json');
   var underscoreTpl = require('../../tpl/underscoreTpl.tpl');
-  var microTpl = underscoreTpl;
+  var microTpl = require('../../tpl/micro-template.tpl');
   var jadeTpl = require('../../tpl/jadeTpl');
-  var doTTpl = require('../../tpl/dot.tpl');
+  var doTTpl = require('../../tpl/dotTpl.tpl');
   var closureTpl = require('../../tpl/closureTpl');
   tplArray.push({
     underscoreTpl: underscoreTpl,
@@ -40,13 +40,13 @@ define(function (require, exports, module) {
     costTime: []
   });
 
-  _.forEach(tplArray, function (tpl) {
+/*  _.forEach(tplArray, function (tpl) {
     var keys = _.keys(tpl);
     var costTime = tpl.costTime == 0 ? 'wait..' : tpl.costTime;
     $res.append('<tr data-type="' + keys[0] + '">' +
       '<td>' + keys[0] + '</td><td class="costTime">' + costTime + '</td><td>padding...</td>' +
       '</tr>')
-  });
+  });*/
   _.each(dataNumArr, function (num) {
     var data = getData(num);
     _.forEach(tplArray, function (tpl, index) {
@@ -92,20 +92,17 @@ define(function (require, exports, module) {
           break;
       }
       tpl.costTime.push(costTime);
-      $res.children('tr[data-type="' + tplType + '"]').children('td').eq(1).html(costTime);
-      $res.children('tr[data-type="' + tplType + '"]').children('td').eq(2).html('ok');
+
     });
   });
 
   //$('.info').html(data.length + 'rows has been rendered');
   renderResult(tplArray);
   function renderResult(data) {
-    var tplType = [], renderTime = [],series=[];
+    var renderSeries=[];
     _.each(data, function (tpl) {
       var key=_.keys(tpl)[0];
-      tplType.push(key);
-      renderTime.push(tpl.costTime);
-      series.push({
+      renderSeries.push({
         name:key,
         data:tpl.costTime
       });
@@ -141,7 +138,7 @@ define(function (require, exports, module) {
         verticalAlign: 'middle',
         borderWidth: 0
       },
-      series: series
+      series: renderSeries
     });
   }
 });

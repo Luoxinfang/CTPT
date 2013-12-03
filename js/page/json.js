@@ -9,7 +9,6 @@
  lastName:xf,
  usedName:['a','b','c','d','e']
  }]*/
-
 define(function (require, exports, module) {
   module.exports = function(num){
     var users = [];

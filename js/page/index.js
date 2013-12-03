@@ -9,10 +9,11 @@ define(function (require, exports, module) {
   require('doT');
   require('soy');
   require('highcharts');
-  var $con = $('.content tbody');
-  var $res = $('.result tbody');
+  var $con = $('.content tbody'),
+    $info = $('.info');
   var tplArray = [];
-  var dataNumArr = [10, 100, 1000/*,2000,3000, 10000, 10 * 10000, 20 * 1000*/];
+  var renderTime = 0, renderedTime = 0;
+  var dataNumArr = [10, 100, 300, 500 , 1000 /*, 10 * 10000 20 * 1000*/];
   var getData = require('page/json');
   var underscoreTpl = require('../../tpl/underscoreTpl.tpl');
   var microTpl = require('../../tpl/micro-template.tpl');
@@ -20,11 +21,11 @@ define(function (require, exports, module) {
   var doTTpl = require('../../tpl/dotTpl.tpl');
   var closureTpl = require('../../tpl/closureTpl');
   tplArray.push({
-    underscoreTpl: underscoreTpl,
+    underscoreTpl: _.template(underscoreTpl),
     costTime: []
   });
   tplArray.push({
-    microTpl: microTpl,
+    microTpl: tmpl(microTpl),
     costTime: []
   });
   tplArray.push({
@@ -32,82 +33,69 @@ define(function (require, exports, module) {
     costTime: []
   });
   tplArray.push({
-    doTTpl: doTTpl,
+    doTTpl: doT.template(doTTpl),
     costTime: []
   });
   tplArray.push({
     closureTpl: closureTpl,
     costTime: []
   });
+  renderTime = dataNumArr.length * tplArray.length;
 
-/*  _.forEach(tplArray, function (tpl) {
-    var keys = _.keys(tpl);
-    var costTime = tpl.costTime == 0 ? 'wait..' : tpl.costTime;
-    $res.append('<tr data-type="' + keys[0] + '">' +
-      '<td>' + keys[0] + '</td><td class="costTime">' + costTime + '</td><td>padding...</td>' +
-      '</tr>')
-  });*/
+  _.each(dataNumArr, function (num) {
+    var row = $('<tr></tr>');
+
+  })
   _.each(dataNumArr, function (num) {
     var data = getData(num);
-    _.forEach(tplArray, function (tpl, index) {
-      var startTime = +new Date,
-        costTime = 0;
-      var tplType = _.keys(tpl)[0];
-      var tplStr = _.values(tpl)[0];
-      var compiledTpl = null;
-      $con.html('<tr><td colspan="7" class="tip">begin to render' + tplType + '</td></tr>');
-      switch (tplType) {
-        case 'underscoreTpl':
-          compiledTpl = _.template(tplStr);
-          $con.html(compiledTpl({
-            rows: data
-          }));
-          costTime = (+new Date) - startTime;
-          break;
-        case 'microTpl':
-          compiledTpl = tmpl(microTpl);
-          $con.html(compiledTpl({
-            rows: data
-          }));
-          costTime = (+new Date) - startTime;
-          break;
-        case 'jadeTpl':
-          $con.html(jadeTpl({
-            rows: data
-          }));
-          costTime = (+new Date) - startTime;
-          break;
-        case 'doTTpl':
-          compiledTpl = doT.template(doTTpl);
-          $con.html(compiledTpl({
-            rows: data
-          }));
-          costTime = (+new Date) - startTime;
-          break;
-        case 'closureTpl':
-          $con.html(CTPT.test({
-            rows: data
-          }));
-          costTime = (+new Date) - startTime;
-          break;
-      }
-      tpl.costTime.push(costTime);
-
+    _.forEach(tplArray, function (tpl) {
+      setTimeout(function () {
+        renderTpl(tpl, data);
+      }, 25);
     });
   });
+  function renderTpl(tpl, data) {
+    var startTime = +new Date, endTime = 0;
+    var tplType = _.keys(tpl)[0];
+    var compileTpl = tpl[tplType];
+    $info.html('begin to render' + tplType);
+    switch (tplType) {
+      case 'jadeTpl':
+        $con.html(jadeTpl({
+          rows: data
+        }));
+        break;
+      case 'closureTpl':
+        $con.html(CTPT.test({
+          rows: data
+        }));
+        break;
+      default :
+        $con.html(compileTpl({
+          rows: data
+        }));
+        break;
+    }
+    endTime = +new Date - startTime;
+    tpl.costTime.push(endTime);
+    $info.html('render ' + tplType + ' with ' + data.length + 'rows, in' + endTime + 'ms');
+    if (++renderedTime == renderTime) {
+      renderResult(tplArray);
+    }
+  }
 
   //$('.info').html(data.length + 'rows has been rendered');
-  renderResult(tplArray);
+
   function renderResult(data) {
-    var renderSeries=[];
+    var renderSeries = [];
     _.each(data, function (tpl) {
-      var key=_.keys(tpl)[0];
+      var key = _.keys(tpl)[0];
       renderSeries.push({
-        name:key,
-        data:tpl.costTime
+        name: key,
+        data: tpl.costTime
       });
     });
-    $('#result').highcharts({
+    $('#resultChart').highcharts({
       title: {
         text: 'client template performance test',
         x: -20 //center
@@ -117,17 +105,22 @@ define(function (require, exports, module) {
         x: -20
       },
       xAxis: {
-        categories: dataNumArr
+        categories: dataNumArr,
+        title: {
+          text: 'row number'
+        }
       },
       yAxis: {
         title: {
-          text: 'time (ms)'
+          text: 'used time (ms)'
         },
-        plotLines: [{
-          value: 0,
-          width: 1,
-          color: '#808080'
-        }]
+        plotLines: [
+          {
+            value: 0,
+            width: 1,
+            color: '#808080'
+          }
+        ]
       },
       tooltip: {
         valueSuffix: 'ms'

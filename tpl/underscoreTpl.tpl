@@ -5,6 +5,7 @@
 %>
   <tr>
     <td><input type="checkbox" name="row" value="<%=row.id%>"/></td>
+    <td><%=row.id%></td>
     <td data-name="<%=row.name%>"><%=row.firstName+'.'+row.lastName%></td>
     <td data-used-name="<%=usedName%>">
       <select name="usedName">

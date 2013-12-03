@@ -4,12 +4,16 @@
 define(function (require, exports, module) {
   var $con = $('.content tbody'),
     $info = $('.info'),
-    $resChart=$('#resultChart'),
-    $resTable=$('#resultTable');
-  var Test;
-  var tplArr=[];
-  var dataNumArr = [10, 100, 300, 500 ];
-  Test = {
+    $resChart = $('#resultChart'),
+    $resTable = $('#resultTable');
+  var Tpl = function (id, tplFunc) {
+    this.id = id;
+    this.tplFunc = tplFunc;
+    this.costTime = [];
+  };
+  var tplArr = [];
+  var dataNumArr = [10, 100, 300, 500, 1000 ];
+  var Test = {
     loadModule: function () {
       require('jquery');
       require('underscore');
@@ -19,41 +23,28 @@ define(function (require, exports, module) {
       require('soy');
       require('highcharts');
     },
-    renderTime :0,
-    renderedTime : 0,
-    getData :function(num){
+    renderTime: 0,
+    renderedTime: 0,
+    getData: function (num) {
       return require('page/json')(num);
     },
     loadAndSetTpl: function () {
-      this.underscoreStr = require('../../tpl/underscoreTpl.tpl');
-      this.microStr = require('../../tpl/micro-template.tpl');
-      this.jadeStr = require('../../tpl/jadeTpl');
-      this.doTStr = require('../../tpl/dotTpl.tpl');
-      this.closureStr = require('../../tpl/closureTpl');
-      tplArr.push({
-        underscoreTpl: _.template(Test.underscoreStr),
-        costTime: []
-      });
-      tplArr.push({
-        microTpl: tmpl(this.microStr),
-        costTime: []
-      });
-      tplArr.push({
-        jadeTpl: this.jadeStr,
-        costTime: []
-      });
-      tplArr.push({
-        doTTpl: doT.template(this.doTStr),
-        costTime: []
-      });
-      tplArr.push({
-        closureTpl: this.closureStr,
-        costTime: []
-      });
+      this.underscoreTpl = require('../../tpl/underscore_tr.tpl');
+      this.microTpl = require('../../tpl/micro_tr.tpl');
+      this.jadeTpl = require('../../tpl/jade_tr');
+      this.dotTpl = require('../../tpl/doT.tpl');
+      require('../../tpl/closure_tr');
+      tplArr = [
+        new Tpl('underscore', _.template(this.underscoreTpl)),
+        new Tpl('micro', tmpl(this.microTpl)),
+        new Tpl('jade', this.jadeTpl),
+        new Tpl('doT', doT.template(this.dotTpl)),
+        new Tpl('closure', CTPT.test)
+      ]
     },
     prepare: function () {
-      this.generateTableHeader();
-      this.renderTime=dataNumArr.length * tplArr.length;
+      this.generateResultTable();
+      this.renderTime = dataNumArr.length * tplArr.length;
     },
     goTest: function () {
       _.each(dataNumArr, function (num) {
@@ -65,39 +56,28 @@ define(function (require, exports, module) {
         });
       });
     },
-    renderTpl: function (tpl,data) {
-      var startTime = +new Date, endTime = 0;
-      var tplType = _.keys(tpl)[0];
-      var compileTpl = tpl[tplType];
-      $info.html('begin to render' + tplType);
-      switch (tplType) {
-        case 'closureTpl':
-          $con.html(CTPT.test({
-            rows: data
-          }));
-          break;
-        default :
-          $con.html(compileTpl({
-            rows: data
-          }));
-          break;
-      }
+    renderTpl: function (tpl, data) {
+      var id = tpl.id;
+      $info.html('begin to render' + id);
+      var endTime = 0,
+        startTime = +new Date;
+      $con.html(tpl.tplFunc({
+        rows: data
+      }));
       endTime = +new Date - startTime;
       tpl.costTime.push(endTime);
-      /*var htmlStr='render ' + tplType + ' with ' + data.length + 'rows, in' + endTime + 'ms';
-       $info.html(htmlStr);*/
-      Test.generateResultTable(tpl);
+      var htmlStr = 'render ' + id + ' with ' + data.length + 'rows, in' + endTime + 'ms';
+      $info.html(htmlStr);
+      Test.fillResultTable(tpl);
       if (++this.renderedTime == this.renderTime) {
         Test.generateResultChart();
-        Test.generateResultTable();
       }
     },
     generateResultChart: function () {
       var renderSeries = [];
       _.each(tplArr, function (tpl) {
-        var key = _.keys(tpl)[0];
         renderSeries.push({
-          name: key,
+          name: tpl.id,
           data: tpl.costTime
         });
       });
@@ -140,34 +120,28 @@ define(function (require, exports, module) {
         series: renderSeries
       });
     },
-    generateTableHeader: function () {
-      var row = $('<tr><td>rows</td></tr>');
-      _.each(dataNumArr, function (num) {
-        row.append('<td>' + num + '</td>');
+    generateResultTable: function () {
+      var tableTpl = require('../../tpl/result_table.tpl');
+      var htmlStr = _.template(tableTpl, {
+        dataNumArr: dataNumArr,
+        tplArr: tplArr
       });
-      $resTable.append(row);
+      $resTable.html(htmlStr);
     },
-    generateResultTable: function (tpl) {
-      var type=_.keys(tpl)[0];
-      var len=dataNumArr.length;
-      var time=tpl.costTime.pop();
-      var $tar=$resTable.find('tr[data-type="'+type+'"]');
-      if($tar.length>0){
-        //$tar.children('td').eq(tpl.costTime.length).html(time);
-      }else{
-        var row = $('<tr data-type="'+type+'"><td>'+type+'</td></tr>');
-        for(var i= 0;i<len;i++){
-          row.append('<td></td>')
-        }
-        $resTable.append(row);
+    fillResultTable: function (tpl) {
+      var tplId = tpl.id,
+        costTimeLen = tpl.costTime.length,
+        time = tpl.costTime[costTimeLen - 1];
+      var $tar = $resTable.find('tr[data-type="' + tplId + '"]');
+      if ($tar.length > 0) {
+        $tar.children('td').eq(costTimeLen).html(typeof time == 'number' ? time : 'error');
       }
-
     },
     init: function () {
-      this.loadModule();//装载需要的模块
-      this.loadAndSetTpl();//装载并设置模板
-      this.prepare();//做好准备
-      this.goTest();//测试
+      this.loadModule();
+      this.loadAndSetTpl();
+      this.prepare();
+      this.goTest();
     }
   };
   Test.init();

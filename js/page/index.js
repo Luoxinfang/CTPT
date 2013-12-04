@@ -6,21 +6,25 @@ define(function (require, exports, module) {
     $info = $('.info'),
     $resChart = $('#resultChart'),
     $resTable = $('#resultTable');
-  var Tpl = function (id, tplFunc) {
-    this.id = id;
-    this.tplFunc = tplFunc;
-    this.costTime = [];
+  var Tpl = function () {
+    this.id = arguments[0];
+    this.render = arguments[1];
+    this.renderTime = [];
+    this.compileTime = [];
   };
   var tplArr = [];
-  var dataNumArr = [10, 100, 300, 500, 1000 ];
+  var dataNumArr = [10, 100, 300 ];
   var Test = {
     loadModule: function () {
       require('jquery');
       require('underscore');
+      require('lodash');
+      window.loadsh = _.noConflict();
       require('microTpl');
       require('runtime');
       require('doT');
       require('soy');
+      require('ejs');
       require('highcharts');
     },
     renderTime: 0,
@@ -32,14 +36,17 @@ define(function (require, exports, module) {
       this.underscoreTpl = require('../../tpl/underscore_tr.tpl');
       this.microTpl = require('../../tpl/micro_tr.tpl');
       this.jadeTpl = require('../../tpl/jade_tr');
-      this.dotTpl = require('../../tpl/doT.tpl');
+      this.dotTpl = require('../../tpl/dot_tr.tpl');
+      this.ejsTpl = '/CTPT/tpl/ejs_tr.tpl';
       require('../../tpl/closure_tr');
       tplArr = [
-        new Tpl('underscore', _.template(this.underscoreTpl)),
-        new Tpl('micro', tmpl(this.microTpl)),
-        new Tpl('jade', this.jadeTpl),
-        new Tpl('doT', doT.template(this.dotTpl)),
-        new Tpl('closure', CTPT.test)
+        new Tpl('ejs', new EJS({url: Test.ejsTpl})),
+        new Tpl('doT', doT.template(Test.dotTpl)),
+        new Tpl('jade', Test.jadeTpl),
+        new Tpl('micro', tmpl(Test.microTpl)),
+        new Tpl('lodash', loadsh.template(Test.underscoreTpl)),
+        new Tpl('closure', CTPT.test),
+        new Tpl('underscore', _.template(Test.underscoreTpl))
       ]
     },
     prepare: function () {
@@ -52,23 +59,38 @@ define(function (require, exports, module) {
         _.forEach(tplArr, function (tpl) {
           setTimeout(function () {
             Test.renderTpl(tpl, data);
-          }, 30);
+          }, 25);
         });
       });
     },
     renderTpl: function (tpl, data) {
       var id = tpl.id;
-      $info.html('begin to render' + id);
-      var endTime = 0,
-        startTime = +new Date;
-      $con.html(tpl.tplFunc({
-        rows: data
-      }));
-      endTime = +new Date - startTime;
-      tpl.costTime.push(endTime);
-      var htmlStr = 'render ' + id + ' with ' + data.length + 'rows, in' + endTime + 'ms';
-      $info.html(htmlStr);
+      var htmlStr = '', tipStr = 'render ' + id;
+      var compileTime, renderTime;
+      $info.html('begin to ' + tipStr);
+      var startCompileTime = +new Date;
+      try {
+        switch (id) {
+          case 'ejs':
+            htmlStr = tpl.render.render({rows: data});
+            break;
+          default :
+            htmlStr = tpl.render({rows: data});
+        }
+        compileTime = +new Date - startCompileTime;
+        var renderStartTime = +new Date;
+        $con.html(htmlStr)
+        renderTime = +new Date - renderStartTime;
+        tipStr += ' with ' + data.length + 'rows, in' + renderTime + 'ms';
+      } catch (e) {
+        compileTime = 'error';
+        renderTime = 'error'
+        tipStr += ' with error!';
+      }
+      tpl.renderTime.push(renderTime);
+      tpl.compileTime.push(compileTime);
       Test.fillResultTable(tpl);
+      $info.html(tipStr);
       if (++this.renderedTime == this.renderTime) {
         Test.generateResultChart();
       }
@@ -78,7 +100,7 @@ define(function (require, exports, module) {
       _.each(tplArr, function (tpl) {
         renderSeries.push({
           name: tpl.id,
-          data: tpl.costTime
+          data: tpl.renderTime
         });
       });
       $resChart.highcharts({
@@ -130,12 +152,14 @@ define(function (require, exports, module) {
     },
     fillResultTable: function (tpl) {
       var tplId = tpl.id,
-        costTimeLen = tpl.costTime.length,
-        time = tpl.costTime[costTimeLen - 1];
+        index = tpl.renderTime.length - 1,
+        compileTime = tpl.compileTime[index],
+        renderTime = tpl.renderTime[index];
       var $tar = $resTable.find('tr[data-type="' + tplId + '"]');
-      if ($tar.length > 0) {
-        $tar.children('td').eq(costTimeLen).html(typeof time == 'number' ? time : 'error');
-      }
+      var compileTimeStr = typeof compileTime == 'number' ? compileTime : 'error';
+      var renderTimeStr = typeof renderTime == 'number' ? renderTime : 'error';
+      $tar.children('td').eq(index*2 + 1).html(compileTimeStr);
+      $tar.children('td').eq(index*2 + 2).html(renderTimeStr);
     },
     init: function () {
       this.loadModule();

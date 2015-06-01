@@ -1,0 +1,23 @@
+//
+   Created by luoxinfang on 13-12-2.
+
+for row in rows
+  -var usedName=row.usedName;
+  tr
+    td
+      input(type='checkbox' name='row' value='#{row.id}')
+    td= row.id
+    td(data-name='#{row.name}')= row.firstName+'.'+row.lastName
+    td(data-used-name='#{userName}')
+      select
+        for item in usedName
+          option(value='#{item}')= item
+    td= row.teem
+    td= 'More info...'
+    td= 'More info...'
+    td= 'More info...'
+    td.edit
+      if row.firstName == 'Lin'
+        a(href='javascript:void(0);')= 'Edit'
+      else
+        |Eidt

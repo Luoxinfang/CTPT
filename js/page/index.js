@@ -13,7 +13,7 @@ define(function (require, exports, module) {
     this.compileTime = [];
   };
   var tplArr = [];
-  var dataNumArr = [10, 100, 300 ];
+  var dataNumArr = [3, 10, 30, 100, 150];
   var Test = {
     loadModule: function () {
       require('jquery');
@@ -25,6 +25,8 @@ define(function (require, exports, module) {
       require('doT');
       require('soy');
       require('ejs');
+      require('handlebars');
+      require('jqueryTmpl');
       require('highcharts');
     },
     renderTime: 0,
@@ -33,12 +35,15 @@ define(function (require, exports, module) {
       return require('page/json')(num);
     },
     loadAndSetTpl: function () {
-      this.underscoreTpl = require('../../tpl/underscore_tr.tpl');
-      this.microTpl = require('../../tpl/micro_tr.tpl');
-      this.jadeTpl = require('../../tpl/jade_tr');
-      this.dotTpl = require('../../tpl/dot_tr.tpl');
-      this.ejsTpl = '/CTPT/tpl/ejs_tr.tpl';
-      require('../../tpl/closure_tr');
+      this.underscoreTpl = require('/tpl/underscore_tr.tpl');
+      this.microTpl = require('/tpl/micro_tr.tpl');
+      this.jadeTpl = require('/tpl/jade_tr');
+      this.dotTpl = require('/tpl/dot_tr.tpl');
+      this.ejsTpl = '/tpl/ejs_tr.tpl';
+      this.handlebarsTpl = require('/tpl/handlebars_tr.tpl');
+      this.jqueyTpl = require('/tpl/jquery_tmpl.tpl');
+      require('/tpl/closure_tr');
+
       tplArr = [
         new Tpl('ejs', new EJS({url: Test.ejsTpl})),
         new Tpl('doT', doT.template(Test.dotTpl)),
@@ -46,8 +51,18 @@ define(function (require, exports, module) {
         new Tpl('micro', tmpl(Test.microTpl)),
         new Tpl('lodash', loadsh.template(Test.underscoreTpl)),
         new Tpl('closure', CTPT.test),
-        new Tpl('underscore', _.template(Test.underscoreTpl))
-      ]
+        new Tpl('underscore', _.template(Test.underscoreTpl)),
+        new Tpl('handlebars', Handlebars.compile(Test.handlebarsTpl))
+      ];
+      Handlebars.registerHelper("isLin", function (name, options) {
+        if (name === 'Lin') {
+          //?????????????
+          return options.fn(this);
+        } else {
+          //?????????????{{else}}????
+          return options.inverse(this);
+        }
+      });
     },
     prepare: function () {
       this.generateResultTable();
@@ -61,6 +76,7 @@ define(function (require, exports, module) {
             Test.renderTpl(tpl, data);
           }, 25);
         });
+
       });
     },
     renderTpl: function (tpl, data) {
@@ -94,6 +110,21 @@ define(function (require, exports, module) {
       if (++this.renderedTime == this.renderTime) {
         Test.generateResultChart();
       }
+      if (this.renderedTime > tplArr.length * (dataNumArr.length - 1)) {
+        console.log(id, 'render over');
+        var allCompileTime = _.reduce(tpl.compileTime, function (memo, num) {
+          return memo + num;
+        });
+        var allRenderTime = _.reduce(tpl.renderTime, function (memo, num) {
+          return memo + num;
+        });
+        var cs = _.reduce(dataNumArr, function (memo, num) {
+          return memo + num;
+        });
+        var cs_time = cs / (allCompileTime + allRenderTime);
+        $('tr[data-type="' + id + '"]').find('.red').text(cs_time.toFixed(3));
+      }
+
     },
     generateResultChart: function () {
       var renderSeries = [];
@@ -158,8 +189,8 @@ define(function (require, exports, module) {
       var $tar = $resTable.find('tr[data-type="' + tplId + '"]');
       var compileTimeStr = typeof compileTime == 'number' ? compileTime : 'error';
       var renderTimeStr = typeof renderTime == 'number' ? renderTime : 'error';
-      $tar.children('td').eq(index*2 + 1).html(compileTimeStr);
-      $tar.children('td').eq(index*2 + 2).html(renderTimeStr);
+      $tar.children('td').eq(index * 2 + 1).html(compileTimeStr);
+      $tar.children('td').eq(index * 2 + 2).html(renderTimeStr);
     },
     init: function () {
       this.loadModule();
